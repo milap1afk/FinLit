@@ -2,22 +2,25 @@
 // The user drags sliders; the numbers and chart update live.
 
 import SwiftUI
+import Foundation
 
 struct PlanView: View {
 
-    // @State = "these values can change, and when they do, redraw the screen."
-    // These three are what the sliders control.
     @State private var monthlyDeposit: Double = 5000
     @State private var annualRate: Double = 12
-    @State private var years: Double = 10   // sliders work in Double, we convert below
+    @State private var years: Double = 10
+    @State private var inflation: Double = 6   // to show value in today's money
 
-    // The plan is REBUILT from the current slider values every time they change.
-    // Because the values above are @State, SwiftUI recomputes this automatically.
     var plan: Investment {
         Investment(name: "Your Plan",
                    monthlyDeposit: monthlyDeposit,
                    annualRatePercent: annualRate,
                    years: Int(years))
+    }
+
+    // Final value adjusted for inflation ("real" / today's-money value).
+    var realValue: Double {
+        plan.projectedValue / pow(1 + inflation / 100, years)
     }
 
     var body: some View {
@@ -35,6 +38,9 @@ struct PlanView: View {
                         Text(plan.projectedValue.rupees)
                             .font(.system(size: 40, weight: .bold))
                             .foregroundStyle(.green)
+                        Text("≈ \(realValue.rupees) in today's money")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,6 +81,10 @@ struct PlanView: View {
                     sliderRow(title: "Years invested",
                               value: "\(Int(years)) yrs",
                               binding: $years, range: 1...40, step: 1)
+
+                    sliderRow(title: "Inflation",
+                              value: "\(String(format: "%.1f", inflation))% / year",
+                              binding: $inflation, range: 0...12, step: 0.5)
                 }
                 .padding()
             }
@@ -114,6 +124,8 @@ struct ContentView: View {
                 .tabItem { Label("Plan", systemImage: "chart.line.uptrend.xyaxis") }
             CompareView()
                 .tabItem { Label("Compare", systemImage: "arrow.left.arrow.right") }
+            GoalView()
+                .tabItem { Label("Goal", systemImage: "target") }
         }
     }
 }
